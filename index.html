@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบวิเคราะห์ ABC อะไหล่ (เวอร์ชันสวยสุด)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .note-badge {
+            padding: 2px 6px;
+            border-radius: 10px;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            display: inline-block;
+            min-width: 50px;
+            text-align: center;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .note-qty {
+            background-color: #e74c3c;
+        }
+
+        /* สีแดง */
+        .note-pick {
+            background-color: #f39c12;
+        }
+
+        /* สีส้ม */
+        .note-code {
+            background-color: #9b59b6;
+        }
+
+        /* สีม่วง */
+        .diff-badge {
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+            min-width: 30px;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .diff-zero {
+            background-color: #d5f5e3;
+            color: #1e8449;
+        }
+
+        /* สีเขียว (ครบ) */
+        .diff-high {
+            background-color: #fadbd8;
+            color: #c0392b;
+        }
+
+        /* สีแดง (ขาด) */
+
+        /* ★ NEW: Styles for Note Selection Buttons */
+        .note-options {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 5px;
+        }
+
+        .note-btn {
+            padding: 6px 12px;
+            border: 1px solid #bdc3c7;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            color: #2c3e50;
+            flex: 1;
+            text-align: center;
+        }
+
+        .note-btn.active {
+            background-color: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+
+        .note-btn.btn-cancel-note.active {
+            background-color: #e74c3c;
+            color: white;
+            border-color: #e74c3c;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 id="appTitle">ABC–Shortship Smart Ordering System</h1>
+        <!-- ★ NEW: Sync Status Indicator (Circular Popup next to Menu) -->
+        <div id="syncStatusDisplay"
+            style="display:none; position: absolute; top: 20px; right: 80px; width: 45px; height: 45px; border-radius: 50%; background: #f39c12; color: white; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 100; cursor: default; flex-direction: column; transition: all 0.3s;">
+        </div>
+        <button id="menuBtn" style="display: none;"><i class="fas fa-user-circle"></i></button>
+        <div id="userMenu">
+            <p id="userID"></p>
+            <p id="userName"></p>
+            <button id="helpBtn">Help</button>
+            <button id="logoutBtn">Log out</button>
+        </div>
+
+        <!-- ★ NEW: Landing Page Menu -->
+        <div id="landingPage" class="landing-container" style="display:none;">
+            <div id="btnMenuABC" class="menu-card">
+                <div class="card-icon"><i class="fas fa-chart-line"></i></div>
+                <h2>ABC Analysis</h2>
+                <p>ระบบวิเคราะห์ ABC และคำนวณจุดสั่งซื้ออัจฉริยะ</p>
+            </div>
+            <div id="btnMenuShotShip" class="menu-card shotship">
+                <div class="card-icon"><i class="fas fa-shipping-fast"></i></div>
+                <h2>ShotShip</h2>
+                <p>ตรวจสอบความสามารถในการจ่ายอะไหล่คลังสินค้า</p>
+            </div>
+        </div>
+
+        <!-- ★ WRAPPER: ABC App Content -->
+        <div id="abcApp" style="display:none;">
+            <button id="btnBackToMenuABC"
+                style="position: absolute; top: 20px; left: 20px; background: white; border: none; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: all 0.2s; z-index: 10;"
+                onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'"
+                title="กลับเมนูหลัก">
+                <img src="https://img.icons8.com/ios-filled/50/2c3e50/home.png" alt="Home"
+                    style="width: 22px; height: 22px;">
+            </button>
+            <div class="loader" id="loader" style="display: none;"></div>
+            <!-- Card เงินสั้น ๆ -->
+            <div class="summary-row" id="mainCardsSection" style="display:none;">
+                <div class="card total-stock" id="cardTotalStock">
+                    <div class="card-title">มูลค่ารวม</div>
+                    <div class="card-value" id="totalStockValue">0.00</div>
+                    <div class="card-count" id="totalCount">0 รายการ</div>
+                </div>
+                <div class="card order-items" id="cardOrderItems">
+                    <div class="card-title">Order</div>
+                    <div class="card-value" id="orderItemCount">0 </div>
+                    <div class="card-value" id="orderTotalValue">0.00</div>
+                </div>
+                <div class="card return-value" id="cardReturnValue">
+                    <div class="card-title">OverStock</div>
+                    <div class="card-value" id="returnValue">0.00</div>
+                    <div class="card-count" id="returnItemCount">0 รายการ</div>
+                </div>
+                <div class="card monthly-withdrawal" id="cardMonthlyWithdrawal">
+                    <div class="card-title">เบิก/เดือน</div>
+                    <div class="card-value" id="monthlyWithdrawalValue">0.00</div>
+                </div>
+                <div class="card stock-days" id="cardStockDays">
+                    <div class="card-title">Stock Days</div>
+                    <div class="card-value" id="stockDaysValue">0</div>
+                </div>
+                <div class="card after-stock-days" id="cardAfterStockDays">
+                    <div class="card-title">After Stock Days</div>
+                    <div class="card-value" id="afterStockDaysValue">0</div>
+                </div>
+            </div>
+            <!-- ABC + Moving -->
+            <div class="summary-row" id="summarySection" style="display:none;">
+                <div class="card abc-a" id="abcA">
+                    <div class="card-title">กลุ่ม A</div>
+                    <div class="card-value" id="sumA">0.00</div>
+                    <div class="card-count" id="countA">0 รายการ</div>
+                </div>
+                <div class="card abc-b" id="abcB">
+                    <div class="card-title">กลุ่ม B</div>
+                    <div class="card-value" id="sumB">0.00</div>
+                    <div class="card-count" id="countB">0 รายการ</div>
+                </div>
+                <div class="card abc-c" id="abcC">
+                    <div class="card-title">กลุ่ม C</div>
+                    <div class="card-value" id="sumC">0.00</div>
+                    <div class="card-count" id="countC">0 รายการ</div>
+                </div>
+                <div class="card fast" id="cardFast">
+                    <div class="card-title">Fast Moving</div>
+                    <div class="card-value" id="valFast">0.00</div>
+                    <div class="card-count" id="countFast">0 รายการ</div>
+                </div>
+                <div class="card medium" id="cardMedium">
+                    <div class="card-title">Medium</div>
+                    <div class="card-value" id="valMedium">0.00</div>
+                    <div class="card-count" id="countMedium">0 รายการ</div>
+                </div>
+                <div class="card slow" id="cardSlow">
+                    <div class="card-title">Slow Moving</div>
+                    <div class="card-value" id="valSlow">0.00</div>
+                    <div class="card-count" id="countSlow">0 รายการ</div>
+                </div>
+                <div class="card slowly" id="cardSlowly">
+                    <div class="card-title">Slowly Moving</div>
+                    <div class="card-value" id="valSlowly">0.00</div>
+                    <div class="card-count" id="countSlowly">0 รายการ</div>
+                </div>
+                <div class="card dead" id="cardDead">
+                    <div class="card-title">Non Moving</div>
+                    <div class="card-value" id="valDead">0.00</div>
+                    <div class="card-count" id="countDead">0 รายการ</div>
+                </div>
+            </div>
+            <div class="controls" id="controlsSection" style="display:none;">
+                <div class="filter-row">
+                    <div class="control-group">
+                        <label><i class="fas fa-industry control-icon"></i> Plant:</label>
+                        <select id="plantFilter">
+                            <option value="">ทุก Plant</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label><i class="fas fa-clock control-icon"></i> Lead Time:</label>
+                        <input type="number" id="leadTimeDays" value="15">
+                        <span class="unit">วัน</span>
+                    </div>
+                    <div class="control-group">
+                        <label><i class="fas fa-shield-alt control-icon"></i> Safety:</label>
+                        <input type="number" id="safetyDays" value="5">
+                        <span class="unit">วัน</span>
+                    </div>
+                    <div class="control-group">
+                        <label><i class="fas fa-calendar-check control-icon"></i> ครอบคลุม:</label>
+                        <input type="number" id="coverDays" value="35">
+                        <span class="unit">วัน</span>
+                    </div>
+                </div>
+                <div class="search-row">
+                    <div class="control-group" style="margin-right:auto;">
+                        <label><i class="fas fa-search control-icon"></i> ค้นหา:</label>
+                        <input type="text" id="searchInput" placeholder="Material หรือ Description">
+                    </div>
+                    <button class="export-btn" id="exportBtn"><i class="fas fa-file-export"></i></button>
+                    <!-- ★ NEW: ปุ่มกราฟ -->
+                    <button class="graph-btn" id="graphBtn" title="แสดงกราฟมูลค่าตาม Plant">
+                        <img src="https://img.icons8.com/ios-filled/50/combo-chart.png" alt="Graph">
+                    </button>
+                </div>
+            </div>
+            <div class="table-container" id="tableSection" style="display:none;">
+                <table id="dataTable">
+                    <thead>
+                        <tr id="tableHeader">
+                            <th data-sort="Plant">Plant <i class="fas fa-sort sort-icon"></i></th>
+                            <th data-sort="Material">Material <i class="fas fa-sort sort-icon"></i></th>
+                            <th>รายการอะไหล่</th>
+                            <th data-sort="Unit">หน่วย</th>
+                            <th data-sort="Unrestricted" title="จำนวนอะไหล่คงเหลือในคลัง">คงเหลือ <i
+                                    class="fas fa-sort sort-icon"></i></th>
+                            <th data-sort="Value" title="มูลค่าคงเหลือ = คงเหลือ * ราคาต่อหน่วย">มูลค่า <i
+                                    class="fas fa-sort sort-icon"></i></th>
+                            <th data-sort="Qty6Month" title="จำนวนเบิกออกใน 6 เดือนที่ผ่านมา">6M</th>
+                            <th data-sort="Qty4Month" title="จำนวนเบิกออกใน 4 เดือนที่ผ่านมา">4M</th>
+                            <th data-sort="AvgMonthly" title="เฉลี่ยต่อวัน = เบิก 4ด. / 120">AvgM</th>
+                            <th data-sort="ThirtyDay" title="จำนวนเบิกใน 30 วันล่าสุด">30Day</th>
+                            <th data-sort="Mean" title="ค่ามากสุดระหว่างเฉลี่ย/เดือน เดิม และ 30Day ">Mean</th>
+                            <th data-sort="SafetyStock"
+                                title="Safety Stock = เฉลี่ยต่อวัน * จำนวนวัน Safety (เฉลี่ยต่อวัน = เฉลี่ยต่อเดือน / 30)">
+                                Safety</th>
+                            <th data-sort="ROP" title="Reorder Point = (เฉลี่ยต่อวัน * Lead Time) + Safety Stock">ROP <i
+                                    class="fas fa-sort sort-icon"></i></th>
+                            <th data-sort="DOS"
+                                title="Days of Supply = คงเหลือ / เฉลี่ยต่อวัน (มากกว่า 9999 แสดง 'มาก')">DOS</th>
+                            <th data-sort="RecommendedOrder"
+                                title="ถ้าคงเหลือ < ROP, แนะนำสั่ง = (เฉลี่ยต่อวัน * ครอบคลุมวัน) - คงเหลือ แล้วปรับตาม Package Size">
+                                แนะนำสั่ง <i class="fas fa-sort sort-icon"></i></th>
+                            <th>หมายเหตุ</th>
+                            <th data-sort="MultiplyUnit" title="ขนาดแพ็คเกจสำหรับการสั่งซื้อ (ใช้ในการปัดเศษแนะนำสั่ง)">
+                                Package</th>
+                            <th data-sort="Product">Product</th>
+                            <th data-sort="ABCValue"
+                                title="A: มูลค่าสะสม <= 70%, B: <= 90%, C: ที่เหลือ (เรียงจากมูลค่าสูงไปต่ำ)">ABC</th>
+                            <th data-sort="Moving"
+                                title="Fast: >=30/เดือน, Medium: >=12, Slow: >=0.7, Slowly: <0.7, Non Moving: =0">Moving
+                            </th>
+                            <th data-sort="ReturnQty"
+                                title="จำนวนส่งคืน = max(0, คงเหลือ - Keep Qty), Keep Qty ขึ้นกับ Moving และ ABC">
+                                จำนวนส่งคืน</th>
+                            <th data-sort="CumPercent" title="% มูลค่าสะสมจากมูลค่ารวม (เรียงจากสูงไปต่ำ)">%สะสม <i
+                                    class="fas fa-sort sort-icon"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataList"></tbody>
+                </table>
+            </div>
+            <div class="pagination" id="pagination" style="display:none;"></div>
+        </div> <!-- End #abcApp -->
+    </div>
+
+    <!-- ★ WRAPPER: ShotShip App Content -->
+    <div id="shotShipApp" style="display:none;">
+        <button id="btnBackToMenuShotShip"
+            style="position: absolute; top: 20px; left: 20px; background: white; border: none; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: all 0.2s; z-index: 10;"
+            onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'"
+            title="กลับเมนูหลัก">
+            <img src="https://img.icons8.com/ios-filled/50/2c3e50/home.png" alt="Home"
+                style="width: 22px; height: 22px;">
+        </button>
+        <div class="loader" id="shotShipLoader" style="display: none;"></div>
+        <div class="controls">
+            <div class="search-row">
+                <h2 id="shotShipHeader" style="margin: 0; color: #2c3e50; margin-right: auto;">ทุกพื้นที่</h2>
+                <div class="control-group">
+                    <label><i class="fas fa-search control-icon"></i> ค้นหา:</label>
+                    <input type="text" id="searchShotShipInput" placeholder="ค้นหา...">
+                </div>
+                <div class="control-group">
+                    <label><i class="fas fa-calendar-week control-icon"></i> ไตรมาส:</label>
+                    <select id="shotShipQuarterFilter">
+                        <option value="">ทุกไตรมาส</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label><i class="fas fa-calendar-alt control-icon"></i> เดือน:</label>
+                    <select id="shotShipMonthFilter">
+                        <option value="">ทุกเดือน</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label><i class="fas fa-calendar-day control-icon"></i> วันที่:</label>
+                    <select id="shotShipDateFilter">
+                        <option value="">ทุกวัน</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label><i class="fas fa-sticky-note control-icon"></i> Note:</label>
+                    <select id="shotShipNoteFilter">
+                        <option value="all">ทั้งหมด</option>
+                        <option value="empty" selected>ว่าง</option>
+                        <option value="not_empty">ไม่ว่าง</option>
+                    </select>
+                </div>
+                <button id="clearCacheBtn" class="export-btn"
+                    style="background: linear-gradient(135deg, #e74c3c, #c0392b); margin-left: 10px;">
+                    <i class="fas fa-trash-alt"></i> เคลียร์แคช
+                </button>
+            </div>
+        </div>
+
+        <div id="shotShipContent" style="display:none;">
+            <!-- ★ NEW: ShotShip Summary Cards -->
+            <div class="summary-row">
+                <div class="card total-stock" id="cardSsTotalDocs">
+                    <div class="card-title">จำนวนใบเบิก</div>
+                    <div class="card-value" id="ssTotalDocs">0</div>
+                </div>
+                <div class="card monthly-withdrawal">
+                    <div class="card-title">รายการเบิก</div>
+                    <div class="card-value" id="ssTotalReqItems">0</div>
+                </div>
+                <div class="card stock-days">
+                    <div class="card-title">รายการที่จ่าย</div>
+                    <div class="card-value" id="ssTotalApprItems">0</div>
+                </div>
+                <div class="card abc-a" id="cardSsTypeGeneral">
+                    <div class="card-title">รายการเบิกอะไหล่</div>
+                    <div class="card-value" id="ssTypeGeneral">0</div>
+                </div>
+                <div class="card abc-a" id="cardSsApprGeneral">
+                    <div class="card-title">รายการที่จ่ายอะไหล่</div>
+                    <div class="card-value" id="ssApprGeneral">0</div>
+                </div>
+                <div class="card abc-b" id="cardSsTypeConsumable">
+                    <div class="card-title">รายการเบิกสิ้นเปลือง</div>
+                    <div class="card-value" id="ssTypeConsumable">0</div>
+                </div>
+                <div class="card abc-b" id="cardSsApprConsumable">
+                    <div class="card-title">รายการที่จ่ายสิ้นเปลือง</div>
+                    <div class="card-value" id="ssApprConsumable">0</div>
+                </div>
+                <div class="card order-items">
+                    <div class="card-title">จำนวนขอเบิก (ชิ้น)</div>
+                    <div class="card-value" id="ssTotalReq">0</div>
+                </div>
+                <div class="card after-stock-days">
+                    <div class="card-title">จำนวนจ่าย (ชิ้น)</div>
+                    <div class="card-value" id="ssTotalAppr">0</div>
+                </div>
+            </div>
+            <div class="summary-row">
+                <div class="card return-value">
+                    <div class="card-title">จำนวนผลต่าง</div>
+                    <div class="card-value" id="ssTotalDiff">0</div>
+                </div>
+                <div class="card return-value" id="cardSsDiffItems">
+                    <div class="card-title">รายการ(ผลต่าง)</div>
+                    <div class="card-value" id="ssDiffItems">0</div>
+                </div>
+                <div class="card return-value" id="cardSsDiffGeneral">
+                    <div class="card-title">อะไหล่(ผลต่าง)</div>
+                    <div class="card-value" id="ssDiffGeneral">0</div>
+                </div>
+                <div class="card return-value" id="cardSsDiffConsumable">
+                    <div class="card-title">สิ้นเปลือง(ผลต่าง)</div>
+                    <div class="card-value" id="ssDiffConsumable">0</div>
+                </div>
+            </div>
+            <div class="summary-row">
+                <div class="card fast" id="cardSsFast">
+                    <div class="card-title">Fast Moving</div>
+                    <div class="card-value" id="ssFast">0</div>
+                </div>
+                <div class="card medium" id="cardSsMedium">
+                    <div class="card-title">Medium Moving</div>
+                    <div class="card-value" id="ssMedium">0</div>
+                </div>
+                <div class="card slow" id="cardSsSlow">
+                    <div class="card-title">Slow Moving</div>
+                    <div class="card-value" id="ssSlow">0</div>
+                </div>
+                <div class="card slowly" id="cardSsSlowly">
+                    <div class="card-title">Slowly Moving</div>
+                    <div class="card-value" id="ssSlowly">0</div>
+                </div>
+                <div class="card dead" id="cardSsDead">
+                    <div class="card-title">Non Moving</div>
+                    <div class="card-value" id="ssDead">0</div>
+                </div>
+            </div>
+
+            <!-- ★ NEW: ShotShip Graph Area -->
+            <div
+                style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin: 20px auto; max-width: 1400px; padding: 0 10px;">
+                <div
+                    style="flex: 3; min-width: 300px; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                    <h3 style="margin-top: 0; color: #2c3e50;">อัตราการจ่ายอะไหล่ตาม Plant (เป้าหมาย 98%)</h3>
+                    <div style="height: 500px; position: relative;">
+                        <canvas id="shotShipChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card abc-c"
+                    style="flex: 1; min-width: 280px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: none;">
+                    <div class="card-title" style="font-size: 32px; margin-bottom: 10px;">ประสิทธิภาพในการจ่าย</div>
+                    <div class="card-value" id="ssPercentAppr" style="font-size: 72px;">0.00%</div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="shotShipTable">
+                    <thead>
+                        <tr>
+                            <th>เลขที่ใบเบิก</th>
+                            <th>วันที่รับโอน</th>
+                            <th>Material Code</th>
+                            <th>Material Name</th>
+                            <th>ประเภทอะไหล่</th>
+                            <th>ผู้ขอเบิก</th>
+                            <th>ผู้โอน</th>
+                            <th>จำนวนที่ขอเบิก</th>
+                            <th>จำนวนอนุมัติ</th>
+                            <th>ผลต่าง</th>
+                            <th>Plant</th>
+                            <th>Moving</th>
+                            <th>หมายเหตุ</th>
+                            <th>วันที่</th>
+                        </tr>
+                    </thead>
+                    <tbody id="shotShipDataList"></tbody>
+                </table>
+            </div>
+            <div class="pagination" id="shotShipPagination" style="display:none;"></div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" style="display: none;">
+        <div class="login-form">
+            <h2>Login</h2>
+            <input type="text" id="idUserInput" placeholder="IDUser">
+            <input type="password" id="passwordInput" placeholder="Password">
+            <label><input type="checkbox" id="rememberMe"> จดจำฉัน</label>
+            <button id="loginBtn">เข้าสู่ระบบ</button>
+            <div id="loginError"></div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="helpModal" style="display: none;">
+        <div class="help-content">
+            <h2>คู่มือการใช้งานระบบ ABC Analysis & Smart Ordering System</h2>
+            <p><strong>เกี่ยวกับระบบ:</strong> ระบบนี้เป็นเครื่องมือวิเคราะห์อะไหล่ด้วยวิธี ABC Analysis
+                และระบบแนะนำการสั่งซื้ออัจฉริยะ ช่วยในการจัดการสต็อกอะไหล่ให้มีประสิทธิภาพ
+                โดยคำนวณจากข้อมูลการเบิกใช้งาน มูลค่าคงเหลือ และปัจจัยอื่นๆ เพื่อลดต้นทุนและป้องกันสต็อกเกิน</p>
+            <h3>ฟังก์ชันหลักและวิธีใช้งาน:</h3>
+            <p><strong>1. การเข้าสู่ระบบ (Login):</strong><br>
+                - ป้อน IDUser และ Password (ใช้ 4 ตัวท้ายของ IDUser เป็น Password)<br>
+                - เลือก "จดจำฉัน" เพื่อเข้าสู่ระบบอัตโนมัติครั้งถัดไป<br>
+                - กด "เข้าสู่ระบบ" เพื่อเข้าใช้งาน</p>
+            <p><strong>2. เมนูผู้ใช้ (User Menu):</strong><br>
+                - กดไอคอนผู้ใช้ที่มุมขวาบนเพื่อเปิดเมนู<br>
+                - แสดงรหัสและชื่อผู้ใช้<br>
+                - กด "Help" เพื่อเปิดคู่มือนี้<br>
+                - กด "Log out" เพื่อออกจากระบบ</p>
+            <p><strong>3. การ์ดสรุป (Summary Cards):</strong><br>
+                - แสดงข้อมูลสรุป เช่น มูลค่ารวม, Order, OverStock, เบิก/เดือน, Stock Days, After Stock Days<br>
+                - กดการ์ดเพื่อกรองข้อมูล เช่น กด "Order" เพื่อแสดงเฉพาะรายการที่แนะนำสั่งซื้อ<br>
+                - การ์ด ABC (A, B, C) และ Moving (Fast, Medium, Slow, Slowly, Dead) สำหรับกรองกลุ่มอะไหล่</p>
+            <p><strong>4. ตัวควบคุม (Controls):</strong><br>
+                - Plant: เลือก Plant เพื่อกรองข้อมูล (เลือก "ทุก Plant" เพื่อแสดงทั้งหมด)<br>
+                - Lead Time, Safety, Cover: ปรับจำนวนวันเพื่อคำนวณ ROP, Safety Stock, และแนะนำสั่ง (หน่วยเป็นวัน)<br>
+                - ค้นหา: พิมพ์ Material หรือ Description เพื่อค้นหา<br>
+                - กดปุ่ม Export เพื่อดาวน์โหลดข้อมูลเป็น CSV</p>
+            <p><strong>5. ตารางข้อมูล (Table):</strong><br>
+                - แสดงรายละเอียดอะไหล่ เช่น Plant, Material, คงเหลือ, มูลค่า, การใช้งาน (6M, 4M, AvgM, 30Day), Mean,
+                Safety, ROP, DOS, แนะนำสั่ง, ABC, Moving, จำนวนส่งคืน, %สะสม<br>
+                - กดหัวคอลัมน์เพื่อเรียงข้อมูล (มีไอคอนลูกศร)<br>
+                - เลื่อนลงเพื่อดูข้อมูลเพิ่มเติม</p>
+            <p><strong>6. การนำทางหน้า (Pagination):</strong><br>
+                - กดปุ่ม <<, <,>, >> เพื่อเปลี่ยนหน้า<br>
+                    - แสดงข้อมูลทีละ 25 รายการ</p>
+            <p><strong>7. การกรองข้อมูล:</strong><br>
+                - กดการ์ดสรุปเพื่อกรอง เช่น กด "OverStock" เพื่อแสดงเฉพาะรายการที่สามารถส่งคืนได้<br>
+                - การเปลี่ยน Plant จะรีเซ็ตการกรองเป็นค่าเริ่มต้น (แสดงทั้งหมด)<br>
+                - การค้นหาจะกรองตามคำที่พิมพ์แบบเรียลไทม์</p>
+            <p><strong>หมายเหตุ:</strong> ข้อมูลอัปเดตจากแหล่งข้อมูลภายนอก หากมีปัญหาโปรดติดต่อผู้ดูแลระบบ</p>
+            <button id="closeHelpBtn">ปิด</button>
+        </div>
+    </div>
+
+    <!-- ★ NEW: Graph Modal -->
+    <div id="graphModal">
+        <div class="graph-content">
+            <div class="graph-header">
+                <h2>กราฟมูลค่า & OverStock ตาม Plant</h2>
+                <button id="closeGraphBtn">ปิด</button>
+            </div>
+            <small>เรียง Company ตาม Stock Days จากมากไปน้อย แล้วต่อด้วย SA ตาม Stock Days จากมากไปน้อย</small>
+            <canvas id="plantChart" height="120"></canvas>
+        </div>
+    </div>
+
+    <!-- ★ NEW: Edit ShotShip Modal -->
+    <div id="editShotShipModal"
+        style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px); justify-content: center; align-items: center;">
+        <div class="modal-content-modern">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> บันทึกหมายเหตุ</h3>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label>เลขที่ใบเบิก</label>
+                    <input type="text" id="editDocNo" readonly>
+                </div>
+                <div class="input-group">
+                    <label>Material Code</label>
+                    <input type="text" id="editMatCode" readonly>
+                </div>
+                <div class="input-group">
+                    <label>Material Name</label>
+                    <input type="text" id="editMatName" readonly>
+                </div>
+                <div class="input-group">
+                    <label>ประเภทอะไหล่</label>
+                    <input type="text" id="editPartType" readonly>
+                </div>
+                <div class="input-group">
+                    <label>หมายเหตุ</label>
+                    <div class="note-options">
+                        <button type="button" class="note-btn" data-value="จำนวนผิด">จำนวนผิด</button>
+                        <button type="button" class="note-btn" data-value="Code ผิด">Code ผิด</button>
+                        <button type="button" class="note-btn" data-value="เบิกผิด">เบิกผิด</button>
+                        <button type="button" class="note-btn btn-cancel-note" data-value="">ของขาด</button>
+                    </div>
+                    <input type="hidden" id="editNote">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btnCancelEdit" class="btn-secondary">ยกเลิก</button>
+                <button id="btnConfirmEdit" class="btn-primary">ยืนยัน</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="main.js"></script>
+</body>
+
+</html>
