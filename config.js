@@ -22,8 +22,7 @@ export const shotShipReportQuarterlyUrl = 'https://opensheet.elk.sh/187t5gzeAtpt
 // RAW DATA Source (Disabled - Using Report_Diff_Items)
 // export const shotShipUrl = 'https://opensheet.elk.sh/187t5gzeAtpt6kQN14UYOFF-LiWm_KoV0Jr6zogvGOe0/Shotship';
 
-export const shotShipSaveUrl = 'https://script.google.com/macros/s/AKfycbzL5p_kXnE2xXqL5j_kXnE2xXq/exec'; // Keep existing Save URL? (User needs to deploy new code.gs to get new ID or same ID)
-// User should update this if they redeploy as new web app
+export const shotShipSaveUrl = 'https://script.google.com/macros/s/AKfycbxZFx915ErNVTgTZgVULeDkbjDkCx8Q2bQkVZ73tD-zRu6Ob0_4PCVVSmUeNayHjNu8cg/exec';
 export const shotShipRemarksUrl = 'https://opensheet.elk.sh/1fJRjIBMAnEDEhMIJBJ8HHwiTEZ9Z_wnB3TERQUeqgyY/ShotShipRemarks';
 
 export const plantInfo = {
